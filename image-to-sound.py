@@ -1,5 +1,4 @@
-
-import PIL
+import PIL.ImageOps
 from PIL import Image
 import numpy as np
 from skimage import feature
@@ -7,16 +6,18 @@ import sounddevice as sd
 import matplotlib.pyplot as plt
 
 
-''' Add in component of y-value to frequency
-    For each pixel in the image, add 440 * (len_column - y_value) / len_column '''
-
 def file_to_image(file):
-#     basewidth = 210
     img = Image.open(file)
+    img = PIL.ImageOps.invert(img)
+    
+    # code below will optionally scale all images to same size, = sqrt(sampling_rate)
+#     basewidth = 210
 #     wpercent = (basewidth/float(img.size[0]))
 #     hsize = int((float(img.size[1])*float(wpercent)))
 #     img = img.resize((basewidth,hsize), PIL.Image.ANTIALIAS)
+
     return np.array(img.convert('L'))
+
 
 def image_to_array(img):
     array = []
@@ -24,8 +25,10 @@ def image_to_array(img):
         array += list(column)
     return np.asarray(array)
 
-# Only add the position component if pixel is above threshold / on
+
 def image_to_modified_array(img):
+    ''' Add in component of y-value to frequency '''
+    
     array = []
     height = len(img[0])
     for column in img:
@@ -33,6 +36,7 @@ def image_to_modified_array(img):
             pixel = column[i] + ((height - i) / height)
             array.append(pixel)
     return np.asarray(array)
+
 
 def image_to_edges(image, sig):
     return np.array(feature.canny(image, sigma=sig), dtype=int)
@@ -46,8 +50,10 @@ def to_wave(frequency, samples):
     wav_wave = np.array(wave, dtype=np.int16)
     return wav_wave
 
+
 def return_time(img_array, sample_rate):
     return float(len(img_array)) / float(sample_rate)
+
 
 def return_samples(time):
     return np.arange(44100 * time) / 44100.0
@@ -60,10 +66,10 @@ def return_sound_wave(image, sampling_rate):
     wave = to_wave(frequency, samples)
     return wave
 
+
 def play(image, sampling_rate):
     wave = return_sound_wave(image, sampling_rate)
     sd.play(wave, blocking=True)
-
 
 
 
